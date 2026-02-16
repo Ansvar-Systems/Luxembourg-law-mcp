@@ -1,86 +1,174 @@
 {
+  "$schema": "https://json-schema.org/draft-07/schema",
   "version": "1.0",
   "mcp_name": "Luxembourg Law MCP",
+  "description": "Contract tests validating Luxembourg Law MCP tool behavior against real legislation data (4,551 acts, 36,014 provisions, French language)",
   "tests": [
     {
-      "id": "gb-001",
+      "id": "lu-001",
       "category": "article_retrieval",
-      "description": "Retrieve Section 1 of Data Protection Act 2018",
+      "description": "Retrieve Article I.er from the 1799 hospice administration law",
       "tool": "get_provision",
-      "input": { "document_id": "data-protection-act-2018", "section": "1" },
-      "assertions": { "result_not_empty": true }
+      "input": {
+        "document_id": "loi-1799-07-04-n1",
+        "provision_ref": "arti.er"
+      },
+      "assertions": {
+        "result_not_empty": true,
+        "text_contains": ["administrations municipales", "hospices civils"],
+        "fields_present": ["results", "_metadata"]
+      }
     },
     {
-      "id": "gb-002",
+      "id": "lu-002",
       "category": "article_retrieval",
-      "description": "Retrieve Section 3 of Computer Misuse Act 1990",
+      "description": "Retrieve Article II from the 1799 hospice administration law",
       "tool": "get_provision",
-      "input": { "document_id": "computer-misuse-act-1990", "section": "3" },
-      "assertions": { "result_not_empty": true }
+      "input": {
+        "document_id": "loi-1799-07-04-n1",
+        "provision_ref": "artii"
+      },
+      "assertions": {
+        "result_not_empty": true,
+        "text_contains": ["administration municipale", "commissions"],
+        "text_not_empty": true
+      }
     },
     {
-      "id": "gb-003",
+      "id": "lu-003",
       "category": "article_retrieval",
-      "description": "Retrieve Section 1 of Online Safety Act 2023",
+      "description": "Retrieve all provisions from data protection law (2002)",
       "tool": "get_provision",
-      "input": { "document_id": "online-safety-act-2023", "section": "1" },
-      "assertions": { "result_not_empty": true }
+      "input": {
+        "document_id": "loi-2002-08-02-n2"
+      },
+      "assertions": {
+        "result_not_empty": true,
+        "fields_present": ["results", "_metadata"],
+        "min_results": 10
+      }
     },
     {
-      "id": "gb-004",
+      "id": "lu-004",
       "category": "search",
-      "description": "Search for 'data protection' across Luxembourg statutes",
+      "description": "Search for 'protection' across Luxembourg statutes",
       "tool": "search_legislation",
-      "input": { "query": "data protection", "limit": 5 },
-      "assertions": { "result_not_empty": true, "min_results": 1 }
+      "input": {
+        "query": "protection",
+        "limit": 10
+      },
+      "assertions": {
+        "result_not_empty": true,
+        "min_results": 3,
+        "any_result_contains": ["protection"]
+      }
     },
     {
-      "id": "gb-005",
+      "id": "lu-005",
       "category": "search",
-      "description": "Search for 'cybersecurity' across Luxembourg statutes",
+      "description": "Search for 'commerce' across Luxembourg statutes",
       "tool": "search_legislation",
-      "input": { "query": "cybersecurity", "limit": 5 },
-      "assertions": { "result_not_empty": true }
+      "input": {
+        "query": "commerce",
+        "limit": 10
+      },
+      "assertions": {
+        "result_not_empty": true,
+        "min_results": 2,
+        "any_result_contains": ["commerce"]
+      }
     },
     {
-      "id": "gb-006",
-      "category": "citation_roundtrip",
-      "description": "Validate citation for DPA 2018 Section 3",
+      "id": "lu-006",
+      "category": "search",
+      "description": "Search for 'données personnelles' (personal data)",
+      "tool": "search_legislation",
+      "input": {
+        "query": "données personnelles",
+        "limit": 5
+      },
+      "assertions": {
+        "result_not_empty": true,
+        "min_results": 1
+      }
+    },
+    {
+      "id": "lu-007",
+      "category": "citation_validation",
+      "description": "Validate citation for 1799 hospice law, Article I.er",
       "tool": "validate_citation",
-      "input": { "citation": "Section 3, Data Protection Act 2018" },
-      "assertions": { "result_not_empty": true }
+      "input": {
+        "citation": "Loi du 4 juillet 1799, art. I.er"
+      },
+      "assertions": {
+        "result_not_empty": true,
+        "citation_resolves": true
+      }
     },
     {
-      "id": "gb-007",
-      "category": "citation_roundtrip",
+      "id": "lu-008",
+      "category": "citation_formatting",
       "description": "Format citation in short form",
       "tool": "format_citation",
-      "input": { "citation": "Section 3, Data Protection Act 2018", "format": "short" },
-      "assertions": { "result_not_empty": true }
+      "input": {
+        "citation": "Loi du 23 mai 1888, concernant l'accession du Grand-Duché de Luxembourg à l'Union internationale",
+        "format": "short"
+      },
+      "assertions": {
+        "result_not_empty": true,
+        "text_not_empty": true
+      }
     },
     {
-      "id": "gb-008",
+      "id": "lu-009",
+      "category": "currency_check",
+      "description": "Check currency of the 1799 hospice administration law",
+      "tool": "check_currency",
+      "input": {
+        "document_id": "loi-1799-07-04-n1"
+      },
+      "assertions": {
+        "result_not_empty": true,
+        "fields_present": ["results", "_metadata"]
+      }
+    },
+    {
+      "id": "lu-010",
+      "category": "currency_check",
+      "description": "Check currency of data protection law (2002)",
+      "tool": "check_currency",
+      "input": {
+        "document_id": "loi-2002-08-02-n2"
+      },
+      "assertions": {
+        "result_not_empty": true,
+        "any_result_contains": ["status", "is_current"]
+      }
+    },
+    {
+      "id": "lu-011",
       "category": "negative_test",
-      "description": "Non-existent statute returns null",
+      "description": "Non-existent document returns gracefully",
       "tool": "get_provision",
-      "input": { "document_id": "nonexistent-act-9999", "section": "1" },
-      "assertions": { "result_is_null": true }
+      "input": {
+        "document_id": "loi-9999-99-99-nonexistent",
+        "provision_ref": "art1"
+      },
+      "assertions": {
+        "handles_gracefully": true
+      }
     },
     {
-      "id": "gb-009",
+      "id": "lu-012",
       "category": "negative_test",
-      "description": "Empty search query returns empty array",
+      "description": "Empty search query returns gracefully",
       "tool": "search_legislation",
-      "input": { "query": "" },
-      "assertions": { "result_empty": true }
-    },
-    {
-      "id": "gb-010",
-      "category": "eu_cross_reference",
-      "description": "Check EU basis for UK GDPR implementation",
-      "tool": "get_eu_basis",
-      "input": { "document_id": "data-protection-act-2018" },
-      "assertions": { "result_not_empty": true }
+      "input": {
+        "query": ""
+      },
+      "assertions": {
+        "handles_gracefully": true
+      }
     }
   ]
 }
