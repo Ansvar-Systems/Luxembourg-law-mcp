@@ -1,0 +1,27 @@
+schema_version: '1.0'
+mcp_name: 'Luxembourg Law MCP'
+jurisdiction: 'LU'
+
+sources:
+  - name: 'Legilux'
+    authority: 'Service central de legislation'
+    official_portal: 'https://legilux.public.lu'
+    canonical_identifier: 'Short title + date (e.g., "Loi du 1er aout 2018")'
+    retrieval_method: 'SPARQL'
+    api_documentation: 'https://data.public.lu'
+    update_frequency: 'weekly'
+    last_ingested: '2026-02-16'
+    license_or_terms:
+      type: 'Open data'
+      url: 'https://data.public.lu/en/terms/'
+      summary: 'Luxembourg government open data, free to use'
+    coverage:
+      scope: 'Luxembourg laws and regulations (cybersecurity and data protection scope)'
+      limitations: 'Initial release covers key cybersecurity legislation only'
+    languages:
+      - 'fr'
+
+data_freshness:
+  automated_checks: true
+  check_frequency: 'weekly'
+  last_verified: '2026-02-16'
