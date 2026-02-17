@@ -6,7 +6,7 @@ import { join } from 'path';
 import { existsSync, copyFileSync, readFileSync, rmSync } from 'fs';
 import { createHash } from 'crypto';
 
-import { registerTools } from '../src/tools/registry.js';
+import { registerTools } from '../dist/tools/registry.js';
 
 const SOURCE_DB = process.env.LUXEMBOURG_LAW_DB_PATH
   || join(process.cwd(), 'data', 'database.db');
