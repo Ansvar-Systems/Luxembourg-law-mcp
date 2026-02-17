@@ -3,6 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 const SERVER_NAME = 'luxembourg-legal-citations';
 const SERVER_VERSION = '1.0.0';
 const REPO_URL = 'https://github.com/Ansvar-Systems/Luxembourg-law-mcp';
+const SOURCE_SCHEMA_VERSION = '2';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   const url = new URL(req.url ?? '/', `https://${req.headers.host}`);
@@ -15,7 +16,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       transport: ['stdio', 'streamable-http'],
       capabilities: ['statutes', 'eu_cross_references'],
       tier: 'free',
-      source_schema_version: '1.0',
+      source_schema_version: SOURCE_SCHEMA_VERSION,
       repo_url: REPO_URL,
       report_issue_url: `${REPO_URL}/issues/new?template=data-error.md`,
     });

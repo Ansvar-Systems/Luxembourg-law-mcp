@@ -3,7 +3,7 @@
 /**
  * Luxembourg Law MCP Server — stdio entry point.
  *
- * Provides UK legislation search via Model Context Protocol.
+ * Provides Luxembourg legislation search via Model Context Protocol.
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';

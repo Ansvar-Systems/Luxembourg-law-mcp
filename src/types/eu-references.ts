@@ -39,12 +39,17 @@ export interface EUBasisDocument {
   articles?: string[];
 }
 
-export interface UKImplementation {
+export interface LuxembourgImplementation {
   document_id: string;
   title: string;
   reference_type: ReferenceType;
   is_primary: boolean;
 }
+
+/**
+ * @deprecated Use LuxembourgImplementation instead.
+ */
+export type UKImplementation = LuxembourgImplementation;
 
 export interface ProvisionEUReference {
   id: string;

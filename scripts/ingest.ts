@@ -10,6 +10,8 @@
  *   npm run ingest                     # Full ingestion
  *   npm run ingest -- --limit 20       # Ingest only 20 laws
  *   npm run ingest -- --skip-discovery # Skip Phase 1, reuse existing index
+ *   npm run ingest -- --ids id1,id2    # Process specific seed IDs only
+ *   npm run ingest -- --force          # Overwrite existing seed files
  *
  * SPARQL endpoint: https://data.legilux.public.lu/sparqlendpoint (Virtuoso, GET)
  */
@@ -35,6 +37,17 @@ const args = process.argv.slice(2);
 const limitArg = args.indexOf('--limit');
 const LIMIT = limitArg !== -1 ? parseInt(args[limitArg + 1], 10) : 0;
 const SKIP_DISCOVERY = args.includes('--skip-discovery');
+const FORCE = args.includes('--force');
+const idsArg = args.indexOf('--ids');
+const IDS_RAW = idsArg !== -1 ? args[idsArg + 1] : undefined;
+const REQUESTED_IDS = IDS_RAW
+  ? new Set(
+      IDS_RAW
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean)
+    )
+  : null;
 
 // Document types to ingest (most important Luxembourg legislative acts)
 const DOC_TYPES = [
@@ -178,7 +191,26 @@ async function fetchAndParseLaws(entries: LawIndexEntry[]): Promise<void> {
 
   fs.mkdirSync(SEED_DIR, { recursive: true });
 
-  const toProcess = LIMIT > 0 ? entries.slice(0, LIMIT) : entries;
+  const selectedEntries = REQUESTED_IDS
+    ? entries.filter((entry) => REQUESTED_IDS.has(generateSeedId(entry)))
+    : entries;
+
+  if (REQUESTED_IDS) {
+    const foundIds = new Set(selectedEntries.map((entry) => generateSeedId(entry)));
+    const missingIds = [...REQUESTED_IDS].filter((id) => !foundIds.has(id));
+    if (missingIds.length > 0) {
+      console.log(`  WARN: ${missingIds.length} requested ID(s) not found in discovery index.`);
+      for (const id of missingIds.slice(0, 20)) {
+        console.log(`    - ${id}`);
+      }
+      if (missingIds.length > 20) {
+        console.log(`    ...and ${missingIds.length - 20} more`);
+      }
+      console.log('');
+    }
+  }
+
+  const toProcess = LIMIT > 0 ? selectedEntries.slice(0, LIMIT) : selectedEntries;
   let processed = 0;
   let skipped = 0;
   let failed = 0;
@@ -189,8 +221,8 @@ async function fetchAndParseLaws(entries: LawIndexEntry[]): Promise<void> {
     const seedId = generateSeedId(entry);
     const seedPath = path.join(SEED_DIR, `${seedId}.json`);
 
-    // Skip if seed already exists
-    if (fs.existsSync(seedPath)) {
+    // Skip if seed already exists unless force mode is active.
+    if (fs.existsSync(seedPath) && !FORCE) {
       skipped++;
       continue;
     }
@@ -265,6 +297,12 @@ async function main(): Promise<void> {
 
   if (LIMIT > 0) {
     console.log(`Limit: ${LIMIT} laws\n`);
+  }
+  if (REQUESTED_IDS) {
+    console.log(`Requested IDs: ${[...REQUESTED_IDS].length}\n`);
+  }
+  if (FORCE) {
+    console.log('Force mode: existing seeds will be overwritten.\n');
   }
 
   // Phase 1: Discovery

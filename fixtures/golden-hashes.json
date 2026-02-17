@@ -1,6 +1,49 @@
 {
+  "$schema": "./golden-hashes.schema.json",
   "version": "1.0",
   "mcp_name": "Luxembourg Law MCP",
-  "note": "Populate after first successful database build",
-  "hashes": {}
+  "jurisdiction": "LU",
+  "description": "Drift detection anchors for stable Luxembourg provisions and source pages.",
+  "provisions": [
+    {
+      "id": "lu-hash-001",
+      "description": "Loi du 4 juillet 1799 relative à l'administration des hospices civils",
+      "upstream_url": "http://data.legilux.public.lu/eli/etat/leg/loi/1799/07/04/n1/jo",
+      "selector_hint": "Article I.er",
+      "expected_sha256": "COMPUTE_ON_FIRST_RUN",
+      "expected_snippet": "administrations municipales"
+    },
+    {
+      "id": "lu-hash-002",
+      "description": "Loi du 2 août 2002 relative au traitement des données à caractère personnel",
+      "upstream_url": "http://data.legilux.public.lu/eli/etat/leg/loi/2002/08/02/n2/jo",
+      "selector_hint": "Article 1er",
+      "expected_sha256": "COMPUTE_ON_FIRST_RUN",
+      "expected_snippet": "données à caractère personnel"
+    },
+    {
+      "id": "lu-hash-003",
+      "description": "Loi des 16-24 août 1790 sur l'organisation judiciaire",
+      "upstream_url": "http://data.legilux.public.lu/eli/etat/leg/loi/1790/08/16/n1/jo",
+      "selector_hint": "Organisation judiciaire",
+      "expected_sha256": "COMPUTE_ON_FIRST_RUN",
+      "expected_snippet": "organisation judiciaire"
+    },
+    {
+      "id": "lu-hash-004",
+      "description": "Loi du 24 juillet 2014 relative aux droits et obligations du patient",
+      "upstream_url": "http://data.legilux.public.lu/eli/etat/leg/loi/2014/07/24/n2/jo",
+      "selector_hint": "droits et obligations du patient",
+      "expected_sha256": "COMPUTE_ON_FIRST_RUN",
+      "expected_snippet": "droits et obligations du patient"
+    },
+    {
+      "id": "lu-hash-005",
+      "description": "Loi du 30 mai 2005 sur la protection des données dans les communications électroniques",
+      "upstream_url": "http://data.legilux.public.lu/eli/etat/leg/loi/2005/05/30/n4/jo",
+      "selector_hint": "communications électroniques",
+      "expected_sha256": "COMPUTE_ON_FIRST_RUN",
+      "expected_snippet": "communications électroniques"
+    }
+  ]
 }

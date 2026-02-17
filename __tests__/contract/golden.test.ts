@@ -136,6 +136,26 @@ const isNightly = process.env['CONTRACT_MODE'] === 'nightly';
 let mcpClient: Client;
 let db: InstanceType<typeof Database>;
 
+function buildTestAboutContext(database: InstanceType<typeof Database>) {
+  let dbBuilt = 'unknown';
+  try {
+    const row = database
+      .prepare("SELECT value FROM db_metadata WHERE key = 'built_at'")
+      .get() as { value: string } | undefined;
+    if (row?.value) {
+      dbBuilt = row.value;
+    }
+  } catch {
+    // Best-effort metadata for test context.
+  }
+
+  return {
+    version: 'test-contract',
+    fingerprint: 'test-fixture',
+    dbBuilt,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Contract test runner
 // ---------------------------------------------------------------------------
@@ -154,7 +174,7 @@ describe(`Contract tests: ${fixture.mcp_name}`, () => {
       { name: 'luxembourg-law-test', version: '0.0.0' },
       { capabilities: { tools: {} } },
     );
-    registerTools(server, db);
+    registerTools(server, db, buildTestAboutContext(db));
 
     mcpClient = new Client({ name: 'test-client', version: '0.0.0' }, { capabilities: {} });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -164,6 +184,35 @@ describe(`Contract tests: ${fixture.mcp_name}`, () => {
 
   afterAll(() => {
     db?.close();
+  });
+
+  it('lists expected tools including about', async () => {
+    const response = await mcpClient.listTools();
+    const toolNames = response.tools.map((tool) => tool.name);
+    expect(toolNames).toEqual(
+      expect.arrayContaining([
+        'search_legislation',
+        'get_provision',
+        'validate_citation',
+        'build_legal_stance',
+        'format_citation',
+        'check_currency',
+        'get_eu_basis',
+        'get_luxembourg_implementations',
+        'search_eu_implementations',
+        'get_provision_eu_basis',
+        'validate_eu_compliance',
+        'about',
+      ]),
+    );
+  });
+
+  it('returns structured MCP error for unknown tool', async () => {
+    const response = await mcpClient.callTool({ name: 'unknown_tool', arguments: {} });
+    expect(response.isError).toBe(true);
+
+    const content = response.content as Array<{ type: string; text: string }>;
+    expect(content?.[0]?.text).toContain('Unknown tool');
   });
 
   for (const test of fixture.tests) {

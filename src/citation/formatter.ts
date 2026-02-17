@@ -1,10 +1,10 @@
 /**
- * UK legal citation formatter.
+ * Legal citation formatter with Luxembourg-friendly defaults.
  *
  * Formats:
- *   full:     "Section 3, Data Protection Act 2018"
- *   short:    "s. 3 DPA 2018"
- *   pinpoint: "s. 3(1)(a)"
+ *   full:     "Loi du 11 avril 1799, art. I.er"
+ *   short:    "art. I.er Loi du 11 avril 1799"
+ *   pinpoint: "art. I.er"
  */
 
 import type { ParsedCitation, CitationFormat } from '../types/index.js';
@@ -18,19 +18,28 @@ export function formatCitation(
   }
 
   const pinpoint = buildPinpoint(parsed);
+  const title = parsed.title?.trim();
+  const year = parsed.year ? String(parsed.year) : '';
+  const luxembourgStyle = !!title && /^(loi|règlement|reglement|arr[eê]t[eé])/i.test(title);
 
   switch (format) {
     case 'full':
-      return `Section ${pinpoint}, ${parsed.title ?? ''} ${parsed.year ?? ''}`.trim();
+      if (luxembourgStyle) {
+        return `${title}, art. ${pinpoint}`.trim();
+      }
+      return `Section ${pinpoint}, ${title ?? ''} ${year}`.trim();
 
     case 'short':
-      return `s. ${pinpoint} ${parsed.title ?? ''} ${parsed.year ?? ''}`.trim();
+      return `art. ${pinpoint} ${title ?? ''} ${year}`.trim();
 
     case 'pinpoint':
-      return `s. ${pinpoint}`;
+      return `art. ${pinpoint}`;
 
     default:
-      return `Section ${pinpoint}, ${parsed.title ?? ''} ${parsed.year ?? ''}`.trim();
+      if (luxembourgStyle) {
+        return `${title}, art. ${pinpoint}`.trim();
+      }
+      return `Section ${pinpoint}, ${title ?? ''} ${year}`.trim();
   }
 }
 

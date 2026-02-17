@@ -29,6 +29,21 @@ export interface SparqlResults {
 let lastRequestTime = 0;
 const MIN_DELAY_MS = 500;
 
+function describeNetworkError(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return String(error);
+  }
+
+  const cause = (error as Error & { cause?: unknown }).cause;
+  if (cause instanceof Error && cause.message && cause.message !== error.message) {
+    return `${error.message} (${cause.message})`;
+  }
+  if (typeof cause === 'string' && cause.length > 0) {
+    return `${error.message} (${cause})`;
+  }
+  return error.message;
+}
+
 async function rateLimit(): Promise<void> {
   const now = Date.now();
   const elapsed = now - lastRequestTime;
@@ -52,13 +67,20 @@ export async function sparqlQuery(query: string): Promise<SparqlBinding[]> {
   const url = new URL(SPARQL_ENDPOINT);
   url.searchParams.set('query', query);
 
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: {
-      Accept: 'application/sparql-results+json',
-      'User-Agent': USER_AGENT,
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        Accept: 'application/sparql-results+json',
+        'User-Agent': USER_AGENT,
+      },
+    });
+  } catch (error) {
+    throw new Error(
+      `SPARQL request failed for ${SPARQL_ENDPOINT}: ${describeNetworkError(error)}`,
+    );
+  }
 
   if (!response.ok) {
     const text = await response.text();

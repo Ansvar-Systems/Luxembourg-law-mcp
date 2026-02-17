@@ -23,6 +23,7 @@ export type {
   EUDocument,
   EUReference,
   EUBasisDocument,
+  LuxembourgImplementation,
   UKImplementation,
   ProvisionEUReference,
 } from './eu-references.js';

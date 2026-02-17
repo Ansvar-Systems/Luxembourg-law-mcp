@@ -1,4 +1,5 @@
 import type Database from '@ansvar/mcp-sqlite';
+import { generateResponseMetadata, type ToolResponse } from '../utils/metadata.js';
 
 export interface AboutContext {
   version: string;
@@ -46,45 +47,48 @@ function safeCount(db: InstanceType<typeof Database>, sql: string): number {
 export function getAbout(
   db: InstanceType<typeof Database>,
   context: AboutContext
-): AboutResult {
+): ToolResponse<AboutResult> {
   return {
-    server: {
-      name: 'Luxembourg Law MCP',
-      package: '@ansvar/luxembourg-law-mcp',
-      version: context.version,
-      suite: 'Ansvar Compliance Suite',
-      repository: 'https://github.com/Ansvar-Systems/Luxembourg-law-mcp',
-    },
-    dataset: {
-      fingerprint: context.fingerprint,
-      built: context.dbBuilt,
-      jurisdiction: 'Luxembourg (LU)',
-      content_basis:
-        'Luxembourg statute text from Legilux open data. ' +
-        'Covers cybersecurity, data protection, and related legislation.',
-      counts: {
-        legal_documents: safeCount(db, 'SELECT COUNT(*) as count FROM legal_documents'),
-        legal_provisions: safeCount(db, 'SELECT COUNT(*) as count FROM legal_provisions'),
-        eu_documents: safeCount(db, 'SELECT COUNT(*) as count FROM eu_documents'),
-        eu_references: safeCount(db, 'SELECT COUNT(*) as count FROM eu_references'),
+    results: {
+      server: {
+        name: 'Luxembourg Law MCP',
+        package: '@ansvar/luxembourg-law-mcp',
+        version: context.version,
+        suite: 'Ansvar Compliance Suite',
+        repository: 'https://github.com/Ansvar-Systems/Luxembourg-law-mcp',
+      },
+      dataset: {
+        fingerprint: context.fingerprint,
+        built: context.dbBuilt,
+        jurisdiction: 'Luxembourg (LU)',
+        content_basis:
+          'Luxembourg statute text from Legilux open data. ' +
+          'Covers cybersecurity, data protection, and related legislation.',
+        counts: {
+          legal_documents: safeCount(db, 'SELECT COUNT(*) as count FROM legal_documents'),
+          legal_provisions: safeCount(db, 'SELECT COUNT(*) as count FROM legal_provisions'),
+          eu_documents: safeCount(db, 'SELECT COUNT(*) as count FROM eu_documents'),
+          eu_references: safeCount(db, 'SELECT COUNT(*) as count FROM eu_references'),
+        },
+      },
+      provenance: {
+        sources: [
+          'Legilux (statutes, statutory instruments)',
+          'EUR-Lex (EU directive references)',
+        ],
+        license:
+          'Apache-2.0 (server code). Legal source texts under Open data.',
+        authenticity_note:
+          'Statute text is derived from Legilux open data. ' +
+          'Verify against official publications when legal certainty is required.',
+      },
+      security: {
+        access_model: 'read-only',
+        network_access: false,
+        filesystem_access: false,
+        arbitrary_code: false,
       },
     },
-    provenance: {
-      sources: [
-        'Legilux (statutes, statutory instruments)',
-        'EUR-Lex (EU directive references)',
-      ],
-      license:
-        'Apache-2.0 (server code). Legal source texts under Open data.',
-      authenticity_note:
-        'Statute text is derived from Legilux open data. ' +
-        'Verify against official publications when legal certainty is required.',
-    },
-    security: {
-      access_model: 'read-only',
-      network_access: false,
-      filesystem_access: false,
-      arbitrary_code: false,
-    },
+    _metadata: generateResponseMetadata(db),
   };
 }

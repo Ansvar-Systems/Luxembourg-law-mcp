@@ -59,6 +59,17 @@ interface ProvisionDedupStats {
   conflicting_duplicates: number;
 }
 
+type EUCommunityValue = 'EU' | 'EG' | 'EEG' | 'Euratom' | 'CE' | 'CEE';
+
+interface ExtractedEUReference {
+  eu_document_id: string;
+  type: 'directive' | 'regulation';
+  year: number;
+  number: number;
+  community: EUCommunityValue;
+  full_citation: string;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Database schema
 // ─────────────────────────────────────────────────────────────────────────────
@@ -273,6 +284,143 @@ function dedupeProvisions(provisions: ProvisionSeed[]): { deduped: ProvisionSeed
   };
 }
 
+const DIRECTIVE_PATTERN = /\bdirective\b[^\d]{0,48}(\d{2,4})\/(\d{1,4})\/(UE|EU|CE|CEE|EG|EEG|EURATOM)\b/giu;
+const REGULATION_PATTERN = /\br(?:è|e)glement\b[^\d]{0,48}\((UE|EU|CE|CEE|EG|EEG|EURATOM)\)\s*(?:n[°o]\s*)?(\d{1,4})\/(\d{2,4})\b/giu;
+
+const EU_DOC_SHORT_NAMES: Record<string, string> = {
+  'regulation:2016/679': 'GDPR',
+  'directive:1995/46': 'Data Protection Directive',
+  'directive:2002/58': 'ePrivacy Directive',
+  'directive:2016/680': 'Law Enforcement Directive',
+  'directive:2016/1148': 'NIS Directive',
+  'directive:2022/2555': 'NIS2 Directive',
+};
+
+function normalizeCommunity(raw: string | undefined): EUCommunityValue {
+  switch ((raw ?? '').toUpperCase()) {
+    case 'UE':
+    case 'EU':
+      return 'EU';
+    case 'EG':
+      return 'EG';
+    case 'EEG':
+      return 'EEG';
+    case 'EURATOM':
+      return 'Euratom';
+    case 'CEE':
+      return 'CEE';
+    case 'CE':
+    default:
+      return 'CE';
+  }
+}
+
+function parseEuYear(raw: string): number | null {
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+
+  if (raw.length === 2) {
+    return parsed >= 57 ? 1900 + parsed : 2000 + parsed;
+  }
+
+  if (parsed < 1957 || parsed > 2100) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function inferRegulationYearAndNumber(
+  community: EUCommunityValue,
+  first: string,
+  second: string
+): { year: number; number: number } | null {
+  const a = Number.parseInt(first, 10);
+  const b = Number.parseInt(second, 10);
+
+  if (!Number.isFinite(a) || !Number.isFinite(b) || a <= 0 || b <= 0) {
+    return null;
+  }
+
+  const yearFromFirst = parseEuYear(first);
+  const yearFromSecond = parseEuYear(second);
+  const isLegacyCommunity = ['CE', 'CEE', 'EG', 'EEG', 'Euratom'].includes(community);
+
+  if (isLegacyCommunity) {
+    if (yearFromSecond) {
+      return { year: yearFromSecond, number: a };
+    }
+    if (yearFromFirst) {
+      return { year: yearFromFirst, number: b };
+    }
+  } else {
+    if (yearFromFirst) {
+      return { year: yearFromFirst, number: b };
+    }
+    if (yearFromSecond) {
+      return { year: yearFromSecond, number: a };
+    }
+  }
+
+  return null;
+}
+
+function normalizeCitation(text: string): string {
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+function extractEUReferencesFromText(text: string): ExtractedEUReference[] {
+  const extracted: ExtractedEUReference[] = [];
+
+  DIRECTIVE_PATTERN.lastIndex = 0;
+  REGULATION_PATTERN.lastIndex = 0;
+
+  for (const match of text.matchAll(DIRECTIVE_PATTERN)) {
+    const year = parseEuYear(match[1]);
+    const number = Number.parseInt(match[2], 10);
+    if (!year || !Number.isFinite(number) || number <= 0) {
+      continue;
+    }
+    const community = normalizeCommunity(match[3]);
+    extracted.push({
+      eu_document_id: `directive:${year}/${number}`,
+      type: 'directive',
+      year,
+      number,
+      community,
+      full_citation: normalizeCitation(match[0]),
+    });
+  }
+
+  for (const match of text.matchAll(REGULATION_PATTERN)) {
+    const community = normalizeCommunity(match[1]);
+    const normalized = inferRegulationYearAndNumber(community, match[2], match[3]);
+    if (!normalized) {
+      continue;
+    }
+
+    extracted.push({
+      eu_document_id: `regulation:${normalized.year}/${normalized.number}`,
+      type: 'regulation',
+      year: normalized.year,
+      number: normalized.number,
+      community,
+      full_citation: normalizeCitation(match[0]),
+    });
+  }
+
+  const unique = new Map<string, ExtractedEUReference>();
+  for (const ref of extracted) {
+    if (!unique.has(ref.eu_document_id)) {
+      unique.set(ref.eu_document_id, ref);
+    }
+  }
+
+  return [...unique.values()];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Build
 // ─────────────────────────────────────────────────────────────────────────────
@@ -311,6 +459,22 @@ function buildDatabase(): void {
     VALUES (?, ?, ?, ?, ?)
   `);
 
+  const insertEuDocument = db.prepare(`
+    INSERT OR IGNORE INTO eu_documents (
+      id, type, year, number, community, title, short_name, description, in_force
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+  `);
+
+  const insertEuReference = db.prepare(`
+    INSERT OR IGNORE INTO eu_references (
+      source_type, source_id, document_id, provision_id, eu_document_id, eu_article,
+      reference_type, reference_context, full_citation, is_primary_implementation,
+      implementation_status, last_verified
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
   // Load seed files
   if (!fs.existsSync(SEED_DIR)) {
     console.log('No seed directory -- creating empty database.');
@@ -331,6 +495,8 @@ function buildDatabase(): void {
   let totalDocs = 0;
   let totalProvisions = 0;
   let totalDefs = 0;
+  let totalEuDocuments = 0;
+  let totalEuReferences = 0;
   let totalDuplicateRefs = 0;
   let totalConflictingDuplicates = 0;
 
@@ -380,6 +546,87 @@ function buildDatabase(): void {
 
   loadAll();
 
+  const inferEuReferenceType = (text: string): { referenceType: string; isPrimary: number } => {
+    const normalized = text.toLowerCase();
+    const isImplementation = (
+      normalized.includes('transposition') ||
+      normalized.includes('transpose') ||
+      normalized.includes('mise en oeuvre') ||
+      normalized.includes('mettant en oeuvre') ||
+      normalized.includes('met en oeuvre') ||
+      normalized.includes('implements')
+    );
+
+    return {
+      referenceType: isImplementation ? 'implements' : 'references',
+      isPrimary: isImplementation ? 1 : 0,
+    };
+  };
+
+  const populateEUData = db.transaction(() => {
+    const docs = db.prepare(
+      `SELECT id, title, description
+       FROM legal_documents
+       ORDER BY id`
+    ).all() as Array<{ id: string; title: string; description: string | null }>;
+
+    for (const doc of docs) {
+      const searchText = [doc.title, doc.description ?? ''].join('\n');
+      const refs = extractEUReferencesFromText(searchText);
+      if (refs.length === 0) {
+        continue;
+      }
+
+      const refType = inferEuReferenceType(searchText);
+      const seenReferences = new Set<string>();
+
+      for (const ref of refs) {
+        const shortName = EU_DOC_SHORT_NAMES[ref.eu_document_id] ?? null;
+        const genericTitle = (
+          ref.type === 'directive'
+            ? `Directive ${ref.year}/${ref.number}/${ref.community}`
+            : `Regulation ${ref.year}/${ref.number}/${ref.community}`
+        );
+
+        const euDocResult = insertEuDocument.run(
+          ref.eu_document_id,
+          ref.type,
+          ref.year,
+          ref.number,
+          ref.community,
+          genericTitle,
+          shortName,
+          `Auto-extracted from Luxembourg legislation metadata (${doc.id}).`,
+        );
+        totalEuDocuments += euDocResult.changes;
+
+        const dedupeKey = `${doc.id}|${ref.eu_document_id}`;
+        if (seenReferences.has(dedupeKey)) {
+          continue;
+        }
+        seenReferences.add(dedupeKey);
+
+        const euRefResult = insertEuReference.run(
+          'document',
+          doc.id,
+          doc.id,
+          null,
+          ref.eu_document_id,
+          null,
+          refType.referenceType,
+          doc.title,
+          ref.full_citation,
+          refType.isPrimary,
+          'unknown',
+          new Date().toISOString(),
+        );
+        totalEuReferences += euRefResult.changes;
+      }
+    }
+  });
+
+  populateEUData();
+
   // Write build metadata
   const insertMeta = db.prepare('INSERT INTO db_metadata (key, value) VALUES (?, ?)');
   const writeMeta = db.transaction(() => {
@@ -400,7 +647,7 @@ function buildDatabase(): void {
   const size = fs.statSync(DB_PATH).size;
   console.log(
     `\nBuild complete: ${totalDocs} documents, ${totalProvisions} provisions, ` +
-    `${totalDefs} definitions`
+    `${totalDefs} definitions, ${totalEuDocuments} EU documents, ${totalEuReferences} EU references`
   );
   if (totalDuplicateRefs > 0) {
     console.log(

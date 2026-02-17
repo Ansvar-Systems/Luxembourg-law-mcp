@@ -42,6 +42,6 @@ export function generateResponseMetadata(
     disclaimer:
       'This data is derived from Legilux open data. ' +
       'Verify against official publications when legal certainty is required.',
-    source_authority: 'The National Archives (Legilux)',
+    source_authority: 'Legilux (Luxembourg government legal portal)',
   };
 }

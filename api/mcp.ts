@@ -3,7 +3,8 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import Database from '@ansvar/mcp-sqlite';
 import { join } from 'path';
-import { existsSync, copyFileSync, rmSync } from 'fs';
+import { existsSync, copyFileSync, readFileSync, rmSync } from 'fs';
+import { createHash } from 'crypto';
 
 import { registerTools } from '../src/tools/registry.js';
 
@@ -26,6 +27,31 @@ function getDatabase(): InstanceType<typeof Database> {
     db.pragma('foreign_keys = ON');
   }
   return db;
+}
+
+function computeAboutContext(database: InstanceType<typeof Database>) {
+  let fingerprint = 'unknown';
+  let dbBuilt = 'unknown';
+
+  try {
+    const buf = readFileSync(SOURCE_DB);
+    fingerprint = createHash('sha256').update(buf).digest('hex').slice(0, 12);
+  } catch {
+    // Keep unknown fallback.
+  }
+
+  try {
+    const row = database
+      .prepare("SELECT value FROM db_metadata WHERE key = 'built_at'")
+      .get() as { value: string } | undefined;
+    if (row?.value) {
+      dbBuilt = row.value;
+    }
+  } catch {
+    // Keep unknown fallback.
+  }
+
+  return { version: '1.0.0', fingerprint, dbBuilt };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -61,7 +87,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       { capabilities: { tools: {} } }
     );
 
-    registerTools(server, database);
+    registerTools(server, database, computeAboutContext(database));
 
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
