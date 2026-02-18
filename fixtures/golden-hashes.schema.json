@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "title": "Golden Hashes",
+  "description": "Drift detection anchors for stable upstream provisions. Each entry tracks a specific upstream resource and its expected content hash.",
+  "type": "object",
+  "required": ["version", "mcp_name", "jurisdiction", "provisions"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "string", "const": "1.0" },
+    "mcp_name": { "type": "string" },
+    "jurisdiction": { "type": "string", "minLength": 2, "maxLength": 2 },
+    "description": { "type": "string" },
+    "provisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "upstream_url", "selector_hint", "expected_sha256", "expected_snippet"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^lu-hash-\\d{3}$",
+            "description": "Unique anchor identifier"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of the anchored provision"
+          },
+          "upstream_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of the upstream authoritative resource"
+          },
+          "selector_hint": {
+            "type": "string",
+            "description": "Hint for locating the provision within the upstream page"
+          },
+          "expected_sha256": {
+            "type": "string",
+            "description": "SHA-256 hash of the normalized upstream content, or 'COMPUTE_ON_FIRST_RUN'"
+          },
+          "expected_snippet": {
+            "type": "string",
+            "description": "Short text snippet expected in the upstream content"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

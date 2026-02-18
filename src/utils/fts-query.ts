@@ -19,7 +19,7 @@ export function buildFtsQueryVariants(query: string): FtsQueryVariants {
   const tokens = trimmed
     .split(/\s+/)
     .filter(t => t.length > 0)
-    .map(t => t.replace(/[^\w\s-]/g, ''));
+    .map(t => t.replace(/[^\p{L}\p{N}\s-]/gu, ''));
 
   if (tokens.length === 0) {
     return { primary: trimmed };

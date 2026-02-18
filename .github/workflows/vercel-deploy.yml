@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -19,6 +23,7 @@ jobs:
       secrets.VERCEL_ORG_ID != '' &&
       secrets.VERCEL_PROJECT_ID != ''
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -50,6 +55,7 @@ jobs:
       secrets.VERCEL_ORG_ID != '' &&
       secrets.VERCEL_PROJECT_ID != ''
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 

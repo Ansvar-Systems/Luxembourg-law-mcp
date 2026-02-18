@@ -1,0 +1,38 @@
+{
+  "name": "luxembourg-law-mcp",
+  "description": "Luxembourg legislation (4,551 acts, 36K provisions) via Model Context Protocol — search statutes, validate citations, check EU cross-references",
+  "version": "1.0.0",
+  "namespace": "eu.ansvar",
+  "vendor": "Ansvar Systems",
+  "repository": "https://github.com/Ansvar-Systems/Luxembourg-law-mcp",
+  "homepage": "https://github.com/Ansvar-Systems/Luxembourg-law-mcp",
+  "license": "Apache-2.0",
+  "runtime": "node",
+  "mcpVersion": "2025-03-26",
+  "capabilities": {
+    "tools": true,
+    "resources": false,
+    "prompts": false
+  },
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@ansvar/luxembourg-law-mcp"]
+    },
+    {
+      "type": "streamable-http",
+      "url": "https://luxembourg-law-mcp.vercel.app/mcp"
+    }
+  ],
+  "keywords": [
+    "law",
+    "luxembourg",
+    "legal",
+    "compliance",
+    "legislation",
+    "legilux",
+    "eu-cross-references",
+    "french"
+  ]
+}

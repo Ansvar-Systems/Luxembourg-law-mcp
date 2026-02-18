@@ -1,5 +1,6 @@
 {
   "name": "@ansvar/luxembourg-law-mcp",
+  "mcpName": "luxembourg-law-mcp",
   "version": "1.0.0",
   "description": "Luxembourg Law MCP — French legislation via Model Context Protocol",
   "type": "module",

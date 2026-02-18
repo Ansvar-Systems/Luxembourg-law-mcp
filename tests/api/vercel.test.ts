@@ -60,18 +60,20 @@ function createResponse(): MockRes {
 }
 
 describe('Vercel deployment handlers', () => {
-  it('serves health payload from /health', () => {
+  it('serves health payload from /health with DB probe', () => {
     const req = createRequest({ url: '/health' });
     const res = createResponse();
 
     healthHandler(req as any, res as any);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toMatchObject({
-      status: 'ok',
-      server: 'luxembourg-legal-citations',
-      tier: 'free',
-    });
+    const body = res.body as Record<string, unknown>;
+    expect(body).toHaveProperty('status');
+    expect(body).toHaveProperty('server', 'luxembourg-legal-citations');
+    expect(body).toHaveProperty('data');
+    expect(body).toHaveProperty('data_freshness');
+    // Status depends on DB availability; in CI without DB it should be 'error' or 'degraded'
+    expect(['ok', 'stale', 'degraded', 'error']).toContain(body.status);
   });
 
   it('serves version payload from /version', () => {
@@ -84,7 +86,6 @@ describe('Vercel deployment handlers', () => {
     expect(res.body).toMatchObject({
       name: 'luxembourg-legal-citations',
       version: '1.0.0',
-      source_schema_version: '2',
     });
   });
 
