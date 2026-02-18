@@ -72,10 +72,8 @@ export function listSources(
           coverage: {
             scope: 'Luxembourg laws and regulations (4,551 acts, 36K provisions)',
             limitations:
-              'In-force status is not currently extracted from upstream metadata — all documents ' +
-              'are marked as in_force regardless of actual legislative status. Verify currency ' +
-              'against Legilux for repealed or amended legislation. ' +
               'EU cross-references use internal identifiers (directive:YYYY/NNN), not CELEX numbers. ' +
+              'In-force status accuracy depends on the latest data ingestion cycle. ' +
               'Not all Luxembourg statutes are included.',
           },
           languages: ['fr'],
