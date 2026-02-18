@@ -52,3 +52,9 @@ Luxembourg legislation MCP server serving 4,551 acts and ~36K provisions from Le
 - Don't use WAL journal mode
 - Don't hardcode data — always derive from DB or `db_metadata` table
 - Don't add tools without updating `registry.ts` switch statement AND `TOOLS`/`buildTools`
+
+## Git Workflow
+
+- **Never commit directly to `main`.** Always create a feature branch and open a Pull Request.
+- Branch protection requires: verified signatures, PR review, and status checks to pass.
+- Use conventional commit prefixes: `feat:`, `fix:`, `chore:`, `docs:`, etc.
