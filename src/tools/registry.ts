@@ -194,7 +194,9 @@ export const TOOLS: Tool[] = [
     description:
       'Check whether a Luxembourg statute or provision is currently in force, amended, or repealed. ' +
       'Returns the current status and any known amendment history. ' +
-      'Use this to verify that legislation you are citing is still active before advising clients. ' +
+      'IMPORTANT LIMITATION: In-force status is not yet extracted from upstream Legilux metadata — ' +
+      'most documents are marked in_force regardless of actual status. Always verify against ' +
+      'the official Legilux portal (legilux.public.lu) for authoritative in-force status. ' +
       'Do NOT confuse with validate_citation — this checks legislative status, not citation accuracy.',
     inputSchema: {
       type: 'object',

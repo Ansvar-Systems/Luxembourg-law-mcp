@@ -72,7 +72,10 @@ export function listSources(
           coverage: {
             scope: 'Luxembourg laws and regulations (4,551 acts, 36K provisions)',
             limitations:
-              'Initial release covers key cybersecurity and data protection legislation. ' +
+              'In-force status is not currently extracted from upstream metadata — all documents ' +
+              'are marked as in_force regardless of actual legislative status. Verify currency ' +
+              'against Legilux for repealed or amended legislation. ' +
+              'EU cross-references use internal identifiers (directive:YYYY/NNN), not CELEX numbers. ' +
               'Not all Luxembourg statutes are included.',
           },
           languages: ['fr'],
