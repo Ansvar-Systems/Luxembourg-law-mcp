@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "jurisdiction": "LU",
+  "jurisdiction_name": "Luxembourg",
+  "portal": "https://legilux.public.lu/",
+  "census_date": "2026-02-22",
+  "agent": "claude-opus-4-6",
+  "summary": {
+    "total_laws": 4551,
+    "ingested": 4551,
+    "provisions": 36000,
+    "ingestable": 4551,
+    "ocr_needed": 0,
+    "inaccessible": 0,
+    "excluded": 0
+  },
+  "sources": [
+    {
+      "name": "Legilux",
+      "authority": "Service central de législation",
+      "url": "https://legilux.public.lu/",
+      "retrieval_method": "SPARQL + Akoma Ntoso XML",
+      "license": "Open data (https://data.public.lu/en/terms/)",
+      "languages": ["fr"]
+    }
+  ],
+  "ingestion": {
+    "method": "SPARQL discovery + Akoma Ntoso XML parsing",
+    "last_ingested": "2026-02-16",
+    "schema_version": 2,
+    "database_format": "SQLite + FTS5",
+    "database_size_mb": 69
+  },
+  "eu_cross_references": {
+    "eu_documents_indexed": 268,
+    "total_references": 372
+  },
+  "tools": [
+    "search_legislation",
+    "get_provision",
+    "validate_citation",
+    "build_legal_stance",
+    "format_citation",
+    "check_currency",
+    "get_eu_basis",
+    "get_luxembourg_implementations",
+    "search_eu_implementations",
+    "get_provision_eu_basis",
+    "validate_eu_compliance",
+    "list_sources",
+    "about"
+  ],
+  "notes": "Census generated from CHANGELOG v1.0.0 metadata. Per-document provision counts require database build (npm run build:db). Re-generate after next ingestion cycle."
+}
