@@ -1,17 +1,19 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import Database from '@ansvar/mcp-sqlite';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import { validateCitation } from '../../src/citation/validator.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const dbPath = join(__dirname, '..', '..', 'data', 'database.db');
+const dbAvailable = existsSync(dbPath);
 
-describe('citation validator', () => {
+describe.skipIf(!dbAvailable)('citation validator', () => {
   let db: InstanceType<typeof Database>;
 
   beforeAll(() => {
-    const dbPath = join(__dirname, '..', '..', 'data', 'database.db');
     db = new Database(dbPath, { readonly: true });
   });
 
