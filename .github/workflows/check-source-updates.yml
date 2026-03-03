@@ -1,0 +1,261 @@
+name: Daily Data Freshness Check
+
+on:
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+    inputs:
+      auto_update:
+        description: Automatically ingest and publish detected updates
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+permissions:
+  contents: read
+
+jobs:
+  check-updates:
+    name: Check Legilux updates
+    runs-on: ubuntu-latest
+    outputs:
+      updates_found: ${{ steps.collect.outputs.updates_found }}
+      update_count: ${{ steps.collect.outputs.update_count }}
+      new_count: ${{ steps.collect.outputs.new_count }}
+      update_ids: ${{ steps.collect.outputs.update_ids }}
+      auto_update_safe: ${{ steps.collect.outputs.auto_update_safe }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Run update check
+        id: check
+        run: |
+          set +e
+          npm run check-updates -- --json --output update-summary.json > check-output.json
+          STATUS=$?
+          echo "exit_status=$STATUS" >> "$GITHUB_OUTPUT"
+          if [ ! -f update-summary.json ]; then
+            echo '{"updates":[],"new_documents":[],"updates_count":0,"new_documents_count":0,"error":"check-updates failed"}' > update-summary.json
+          fi
+          set -e
+
+      - name: Compute workflow outputs
+        id: collect
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          function seedIdFromUri(uri) {
+            const match = uri.match(/\/eli\/etat\/(?:leg\/)?(\w+)\/(\d{4})\/(\d{2})\/(\d{2})\/(\w+)\//);
+            if (match) {
+              const [, type, year, month, day, ref] = match;
+              return `${type}-${year}-${month}-${day}-${ref}`;
+            }
+            return null;
+          }
+
+          const summary = JSON.parse(fs.readFileSync('update-summary.json', 'utf8'));
+          const updates = Array.isArray(summary.updates) ? summary.updates : [];
+          const newDocs = Array.isArray(summary.new_documents) ? summary.new_documents : [];
+
+          const ids = new Set();
+          for (const item of updates) {
+            if (item && typeof item.id === 'string') ids.add(item.id);
+          }
+          for (const item of newDocs) {
+            if (!item || typeof item.uri !== 'string') continue;
+            const id = seedIdFromUri(item.uri);
+            if (id) ids.add(id);
+          }
+
+          const idList = [...ids].slice(0, 25);
+          const output = fs.createWriteStream(process.env.GITHUB_OUTPUT, { flags: 'a' });
+          output.write(`updates_found=${updates.length > 0 || newDocs.length > 0}\n`);
+          output.write(`update_count=${updates.length}\n`);
+          output.write(`new_count=${newDocs.length}\n`);
+          output.write(`update_ids=${idList.join(',')}\n`);
+          output.write(`auto_update_safe=${idList.length > 0 && idList.length <= 25}\n`);
+          output.end();
+          NODE
+
+      - name: Upload check artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-check-results
+          path: |
+            check-output.json
+            update-summary.json
+          retention-days: 14
+
+  report:
+    name: Report results
+    runs-on: ubuntu-latest
+    needs: [check-updates]
+    if: always()
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Create or update issue when updates exist
+        if: needs.check-updates.outputs.updates_found == 'true'
+        uses: actions/github-script@v7
+        env:
+          UPDATE_COUNT: ${{ needs.check-updates.outputs.update_count }}
+          NEW_COUNT: ${{ needs.check-updates.outputs.new_count }}
+        with:
+          script: |
+            const updateCount = process.env.UPDATE_COUNT;
+            const newCount = process.env.NEW_COUNT;
+            const body = [
+              `## Data Freshness Check - ${new Date().toISOString().split('T')[0]}`,
+              '',
+              `- Updated local documents detected: **${updateCount}**`,
+              `- New remote documents detected: **${newCount}**`,
+              '',
+              'Run locally:',
+              '```bash',
+              'npm run check-updates',
+              '# Optional targeted refresh',
+              'npm run ingest -- --ids <comma-separated-ids> --force',
+              'npm run build:db',
+              'npm run test:contract',
+              '```',
+              '',
+              'This issue is managed automatically by the scheduled freshness workflow.'
+            ].join('\n');
+
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'data-update'
+            });
+
+            if (existing.data.length > 0) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.data[0].number,
+                title: 'Data Freshness: Updates Available',
+                body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Data Freshness: Updates Available',
+                body,
+                labels: ['data-update', 'automated']
+              });
+            }
+
+      - name: Close issue when everything is current
+        if: needs.check-updates.outputs.updates_found != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'data-update'
+            });
+
+            for (const issue of existing.data) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'completed'
+              });
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `Automated freshness check reports no outstanding updates as of ${new Date().toISOString().split('T')[0]}.`
+              });
+            }
+
+  auto-update:
+    name: Auto-update and publish
+    runs-on: ubuntu-latest
+    needs: [check-updates]
+    if: |
+      github.event.inputs.auto_update == 'true' &&
+      needs.check-updates.outputs.updates_found == 'true' &&
+      needs.check-updates.outputs.auto_update_safe == 'true'
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Refresh targeted seed files
+        env:
+          UPDATE_IDS: ${{ needs.check-updates.outputs.update_ids }}
+        run: |
+          if [ -z "$UPDATE_IDS" ]; then
+            echo "No update IDs provided; skipping."
+            exit 0
+          fi
+          npm run ingest -- --ids "$UPDATE_IDS" --force
+
+      - name: Rebuild database
+        run: npm run build:db
+
+      - name: Run contract tests
+        run: npm run test:contract
+
+      - name: Bump patch version
+        id: version
+        run: |
+          npm version patch --no-git-tag-version
+          echo "new_version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No repository changes detected after auto-update."
+            exit 0
+          fi
+
+          git commit -m "chore: auto-update Luxembourg legal data to v${NEW_VERSION}"
+          git tag "v${NEW_VERSION}"
+          git push origin main --tags
