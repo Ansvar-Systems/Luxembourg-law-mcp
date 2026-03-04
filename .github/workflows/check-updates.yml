@@ -21,6 +21,7 @@ jobs:
   check-updates:
     name: Check Legilux updates
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
       updates_found: ${{ steps.collect.outputs.updates_found }}
       update_count: ${{ steps.collect.outputs.update_count }}
@@ -106,6 +107,7 @@ jobs:
   report:
     name: Report results
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: [check-updates]
     if: always()
     permissions:
@@ -197,6 +199,7 @@ jobs:
   auto-update:
     name: Auto-update and publish
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [check-updates]
     if: |
       github.event.inputs.auto_update == 'true' &&

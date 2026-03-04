@@ -48,8 +48,14 @@ export async function getProvision(
 
   const provisionRef = input.provision_ref ?? input.section;
 
-  // If no specific provision, return all provisions for the document
+  // If no specific provision, return provisions for the document (capped to prevent context overflow)
+  const MAX_PROVISIONS = 50;
+
   if (!provisionRef) {
+    const total = (db.prepare(
+      'SELECT COUNT(*) as count FROM legal_provisions WHERE document_id = ?'
+    ).get(resolvedDocumentId) as { count: number })?.count ?? 0;
+
     const rows = db.prepare(`
       SELECT
         lp.document_id,
@@ -64,11 +70,27 @@ export async function getProvision(
       JOIN legal_documents ld ON ld.id = lp.document_id
       WHERE lp.document_id = ?
       ORDER BY lp.id
-    `).all(resolvedDocumentId) as ProvisionRow[];
+      LIMIT ?
+    `).all(resolvedDocumentId, MAX_PROVISIONS) as ProvisionRow[];
+
+    const _metadata = generateResponseMetadata(db);
+
+    if (total > MAX_PROVISIONS) {
+      return {
+        results: rows,
+        _metadata: {
+          ..._metadata,
+          truncated: true,
+          total_provisions: total,
+          returned_provisions: MAX_PROVISIONS,
+          hint: 'Result truncated. Use section or provision_ref to retrieve specific provisions.',
+        },
+      };
+    }
 
     return {
       results: rows,
-      _metadata: generateResponseMetadata(db)
+      _metadata,
     };
   }
 

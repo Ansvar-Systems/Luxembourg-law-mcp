@@ -8,6 +8,7 @@ export interface ResponseMetadata {
   data_freshness: string;
   disclaimer: string;
   source_authority: string;
+  [key: string]: unknown;
 }
 
 export interface ToolResponse<T> {

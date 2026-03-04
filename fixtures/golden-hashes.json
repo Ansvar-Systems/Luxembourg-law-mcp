@@ -3,46 +3,46 @@
   "version": "1.0",
   "mcp_name": "Luxembourg Law MCP",
   "jurisdiction": "LU",
-  "description": "Drift detection anchors for stable Luxembourg provisions and source pages.",
+  "description": "Drift detection anchors for stable Luxembourg provisions (Akoma Ntoso XML from Legilux).",
   "provisions": [
     {
       "id": "lu-hash-001",
       "description": "Loi du 4 juillet 1799 relative à l'administration des hospices civils",
-      "upstream_url": "http://data.legilux.public.lu/eli/etat/leg/loi/1799/07/04/n1/jo",
+      "upstream_url": "https://data.legilux.public.lu/eli/etat/leg/loi/1799/07/04/n1/jo/fr/xml",
       "selector_hint": "Article I.er",
-      "expected_sha256": "COMPUTE_ON_FIRST_RUN",
+      "expected_sha256": "6866809709dd39f6f9854df6623addc7cffadc78c2ad636823a13ed6088d814a",
       "expected_snippet": "administrations municipales"
     },
     {
       "id": "lu-hash-002",
       "description": "Loi du 2 août 2002 relative au traitement des données à caractère personnel",
-      "upstream_url": "http://data.legilux.public.lu/eli/etat/leg/loi/2002/08/02/n2/jo",
+      "upstream_url": "https://data.legilux.public.lu/eli/etat/leg/loi/2002/08/02/n2/jo/fr/xml",
       "selector_hint": "Article 1er",
-      "expected_sha256": "COMPUTE_ON_FIRST_RUN",
+      "expected_sha256": "258a423c8de40e57e0674e5a0b899c914e849b596116bc5ff2423557b0648d4a",
       "expected_snippet": "données à caractère personnel"
     },
     {
       "id": "lu-hash-003",
       "description": "Loi des 16-24 août 1790 sur l'organisation judiciaire",
-      "upstream_url": "http://data.legilux.public.lu/eli/etat/leg/loi/1790/08/16/n1/jo",
+      "upstream_url": "https://data.legilux.public.lu/eli/etat/leg/loi/1790/08/16/n1/jo/fr/xml",
       "selector_hint": "Organisation judiciaire",
-      "expected_sha256": "COMPUTE_ON_FIRST_RUN",
+      "expected_sha256": "fa278738ad85207c1bddce2b368f45acd463a445d525160874a484286a3ccdf4",
       "expected_snippet": "organisation judiciaire"
     },
     {
       "id": "lu-hash-004",
       "description": "Loi du 24 juillet 2014 relative aux droits et obligations du patient",
-      "upstream_url": "http://data.legilux.public.lu/eli/etat/leg/loi/2014/07/24/n2/jo",
+      "upstream_url": "https://data.legilux.public.lu/eli/etat/leg/loi/2014/07/24/n2/jo/fr/xml",
       "selector_hint": "droits et obligations du patient",
-      "expected_sha256": "COMPUTE_ON_FIRST_RUN",
+      "expected_sha256": "538ac604f96909abc93f33e6ff26ce05246d06473f0f2c635f7ce4b59caa3db8",
       "expected_snippet": "droits et obligations du patient"
     },
     {
       "id": "lu-hash-005",
       "description": "Loi du 30 mai 2005 sur la protection des données dans les communications électroniques",
-      "upstream_url": "http://data.legilux.public.lu/eli/etat/leg/loi/2005/05/30/n4/jo",
+      "upstream_url": "https://data.legilux.public.lu/eli/etat/leg/loi/2005/05/30/n4/jo/fr/xml",
       "selector_hint": "communications électroniques",
-      "expected_sha256": "COMPUTE_ON_FIRST_RUN",
+      "expected_sha256": "db614d8011f64e21f2fdde4ee6464aa936a999642b685615d0553edcad9fd25a",
       "expected_snippet": "communications électroniques"
     }
   ]

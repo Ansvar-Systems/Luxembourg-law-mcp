@@ -65,6 +65,8 @@ interface LawIndexEntry {
   title: string;
   typeDocument: string;
   xmlUrl: string;
+  inForceStatus?: string;
+  dateNoLongerInForce?: string;
 }
 
 interface SeedProvision {
@@ -105,7 +107,7 @@ async function discoverLaws(): Promise<LawIndexEntry[]> {
     while (hasMore) {
       const query = `
         PREFIX jolux: <http://data.legilux.public.lu/resource/ontology/jolux#>
-        SELECT ?act ?date ?title ?xmlUrl WHERE {
+        SELECT ?act ?date ?title ?xmlUrl ?inForceStatus ?dateNoLongerInForce WHERE {
           ?act a jolux:Act ;
                jolux:publicationDate ?date ;
                jolux:typeDocument <http://data.legilux.public.lu/resource/authority/resource-type/${docType}> ;
@@ -114,6 +116,8 @@ async function discoverLaws(): Promise<LawIndexEntry[]> {
                 jolux:isEmbodiedBy ?manifest .
           ?manifest jolux:isExemplifiedBy ?xmlUrl ;
                     jolux:userFormat <http://data.legilux.public.lu/resource/authority/user-format/xml> .
+          OPTIONAL { ?act jolux:inForceStatus ?inForceStatus }
+          OPTIONAL { ?act jolux:dateNoLongerInForce ?dateNoLongerInForce }
         }
         ORDER BY DESC(?date)
         LIMIT ${PAGE_SIZE}
@@ -129,6 +133,8 @@ async function discoverLaws(): Promise<LawIndexEntry[]> {
           title: b['title'].value,
           typeDocument: docType,
           xmlUrl: b['xmlUrl'].value,
+          inForceStatus: b['inForceStatus']?.value,
+          dateNoLongerInForce: b['dateNoLongerInForce']?.value,
         });
       }
 
@@ -184,6 +190,13 @@ function mapDocType(typeDocument: string): string {
     case 'RGD': return 'statute';
     default: return 'statute';
   }
+}
+
+function mapInForceStatus(entry: LawIndexEntry): string {
+  if (entry.inForceStatus?.includes('no-longer-in-force')) return 'repealed';
+  if (entry.inForceStatus?.includes('partially-in-force')) return 'amended';
+  if (entry.dateNoLongerInForce) return 'repealed';
+  return 'in_force';
 }
 
 async function fetchAndParseLaws(entries: LawIndexEntry[]): Promise<void> {
@@ -270,7 +283,7 @@ async function fetchAndParseLaws(entries: LawIndexEntry[]): Promise<void> {
       id: seedId,
       type: mapDocType(entry.typeDocument),
       title: parsed.title || entry.title,
-      status: 'in_force',
+      status: mapInForceStatus(entry),
       issued_date: parsed.dateDocument || entry.date,
       url: entry.uri,
       provisions: parsed.provisions,
