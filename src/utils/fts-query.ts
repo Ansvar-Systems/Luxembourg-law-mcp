@@ -56,12 +56,14 @@ export function sanitizeFtsInput(input: string): string {
 
   if (containsBooleanOperators(tokens)) {
     // Boolean mode: narrow strip — preserve quotes and parens for phrase grouping
-    return input.replace(/[{}[\]^~*:]/g, ' ').replace(/\s+/g, ' ').trim();
+    // Preserve trailing * on words (FTS5 prefix search)
+    return input.replace(/[{}[\]^~:]/g, ' ').replace(/\*(?!\s|$)/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
-  // Standard mode: aggressive strip
+  // Standard mode: aggressive strip — preserve trailing * on words (FTS5 prefix search)
   const cleaned = input
-    .replace(/['"(){}[\]^~*:@#$%&+=<>|\\/.!?,;]/g, ' ')
+    .replace(/['"(){}[\]^~:@#$%&+=<>|\\/.!?,;]/g, ' ')
+    .replace(/\*(?!\s|$)/g, ' ')    // strip * unless at end of word
     .replace(/\s+/g, ' ')
     .trim();
 
