@@ -39,12 +39,12 @@ This MCP server makes Luxembourg law **searchable, cross-referenceable, and AI-r
 
 > Connect directly to the hosted version — zero dependencies, nothing to install.
 
-**Endpoint:** `https://mcp.ansvar.eu/law-luxembourg-law-mcp/mcp`
+**Endpoint:** `https://luxembourg-law-mcp.vercel.app/mcp`
 
 | Client | How to Connect |
 |--------|---------------|
 | **Claude.ai** | Settings > Connectors > Add Integration > paste URL |
-| **Claude Code** | `claude mcp add luxembourg-law --transport http https://mcp.ansvar.eu/law-luxembourg-law-mcp/mcp` |
+| **Claude Code** | `claude mcp add luxembourg-law --transport http https://luxembourg-law-mcp.vercel.app/mcp` |
 | **Claude Desktop** | Add to config (see below) |
 | **GitHub Copilot** | Add to VS Code settings (see below) |
 
@@ -55,7 +55,7 @@ This MCP server makes Luxembourg law **searchable, cross-referenceable, and AI-r
   "mcpServers": {
     "luxembourg-law": {
       "type": "url",
-      "url": "https://mcp.ansvar.eu/law-luxembourg-law-mcp/mcp"
+      "url": "https://luxembourg-law-mcp.vercel.app/mcp"
     }
   }
 }
@@ -68,7 +68,7 @@ This MCP server makes Luxembourg law **searchable, cross-referenceable, and AI-r
   "github.copilot.chat.mcp.servers": {
     "luxembourg-law": {
       "type": "http",
-      "url": "https://mcp.ansvar.eu/law-luxembourg-law-mcp/mcp"
+      "url": "https://luxembourg-law-mcp.vercel.app/mcp"
     }
   }
 }
