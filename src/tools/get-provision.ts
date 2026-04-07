@@ -81,15 +81,6 @@ export async function getProvision(
       return {
         results: rows,
         _metadata: {
-      _citation: buildProvisionCitation(
-        resolvedDocumentId,
-        String(rows[0]?.document_title || ''),
-        String(rows[0]?.provision_ref || ''),
-        input.document_id,
-        input.section || input.provision_ref || '',
-        null,
-        null,
-      ),
           ..._metadata,
           truncated: true,
           total_provisions: total,
@@ -102,6 +93,15 @@ export async function getProvision(
     return {
       results: rows,
       _metadata,
+      _citation: buildProvisionCitation(
+        resolvedDocumentId,
+        String(rows[0]?.document_title || ''),
+        String(rows[0]?.provision_ref || ''),
+        input.document_id,
+        input.section || input.provision_ref || '',
+        null,
+        null,
+      ),
     };
   }
 
@@ -129,7 +129,7 @@ export async function getProvision(
 
   return {
     results: row,
-    _metadata: generateResponseMetadata(db)
+    _metadata: generateResponseMetadata(db),
     _citation: buildProvisionCitation(
       row.document_id,
       row.document_title,
